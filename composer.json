@@ -1,0 +1,12 @@
+{
+    "name": "bryanwayb/nodesocket",
+    "description": "Communication libray for the NodeSocket protocol",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bryan Way",
+            "email": "bryanwayb@gmail.com"
+        }
+    ],
+    "require": {}
+}
