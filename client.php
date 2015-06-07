@@ -50,7 +50,7 @@
 			}
 		}
 		
-		public function linkFunction($identifier, $typemap = null)
+		public function linkFunction($identifier, $typemap = array())
 		{
 			return function() use (&$identifier, &$typemap) {
 				return $this->remoteExecute($identifier, $typemap, func_get_args());
@@ -81,7 +81,7 @@
 						$this->state = NodeSocketCommon::$EnumConnectionState['Verified'];
 
 						socket_set_option($this->socket, SOL_SOCKET, SO_KEEPALIVE, 1);
-						socket_write($this->socket, pack('c', NodeSocketCommon::$EnumExecutionCode['ClientReady']));
+						socket_write($this->socket, pack('C', NodeSocketCommon::$EnumExecutionCode['ClientReady']));
 					}
 					else
 					{
