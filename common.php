@@ -31,6 +31,14 @@
 			'_max' => 0xA
 		);
 		
+		public static $EnumServerResponse = array(
+			'Okay' => 0x0,
+			'NoResult' => 0x1,
+			'InvalidFunction' => 0x2,
+			'ServerError' => 0x3,
+			'_max' => 0x4
+		);
+		
 		public static function createExecutePayload($identifier, $typemap, $args)
 		{
 			$buffer = pack('cV', NodeSocketCommon::$EnumExecutionCode['ExecFunction'], strlen($identifier)) . $identifier;
@@ -108,7 +116,7 @@
 							break;
 						case NodeSocketCommon::$EnumDataType['string']:
 							$tempBuf = utf8_encode($args[$i]);
-							$size = sizeof($tempBuf);
+							$size = strlen($tempBuf);
 							break;
 						case NodeSocketCommon::$EnumDataType['boolean']:
 							$tempBuf = pack('C', $args[$i] ? 0x1 : 0x0);
