@@ -88,12 +88,12 @@
 						case NodeSocketCommon::$EnumDataType['string']:
 							$result = substr($responseBuffer, 2);
 							break;
-						case NodeSocketCommon::$EnumDataType['ubyte']:
+						case NodeSocketCommon::$EnumDataType['boolean']:
 							$result = unpack('Cvalue', substr($responseBuffer, 2, 1));
 							$result = $result['value'] > 0;
 							break;
 						default:
-							throw new Exception('Unrecognized data type ' . $dataType . ' returned from server');
+							throw new Exception('Unrecognized data type ' . $dataType['value'] . ' returned from server');
 							return;
 					}
 				

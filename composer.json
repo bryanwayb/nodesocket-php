@@ -8,5 +8,16 @@
             "email": "bryanwayb@gmail.com"
         }
     ],
-    "require": {}
+    "require": {},
+    "keywords": [
+        "bryanwayb",
+        "nodesocket",
+        "remote",
+        "package"
+    ],
+    "autoload": {
+        "psr-4": {
+            "bryanwayb\\nodesocket\\": "lib"
+        }
+    }
 }

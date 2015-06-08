@@ -1,6 +1,6 @@
 <?php
-	require 'common.php';
-	require 'client.php';
+	require 'lib/client.php';
+	require 'lib/common.php';
 	
 	$client = new NodeSocketClient(22, 'localhost');
 	$power = $client->linkFunction('power');
