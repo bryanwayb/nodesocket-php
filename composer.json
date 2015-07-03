@@ -1,6 +1,6 @@
 {
     "name": "bryanwayb/nodesocket",
-    "description": "Communication libray for the NodeSocket protocol",
+    "description": "Network protocol for shared execution spaces",
     "license": "MIT",
     "authors": [
         {

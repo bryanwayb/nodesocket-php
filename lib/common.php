@@ -12,8 +12,9 @@
 		);
 		
 		public static $EnumExecutionCode = array(
-			'ClientReady' => 0x0,
-			'ExecFunction' => 0x1,
+			'RequestMaster' => 0x0,
+			'RequestSlave' => 0x1,
+			'ExecFunction' => 0x2,
 			'_max' => 0x2
 		);
 		
@@ -35,14 +36,15 @@
 			'Okay' => 0x0,
 			'NoResult' => 0x1,
 			'InvalidFunction' => 0x2,
-			'ServerError' => 0x3,
+			'NodeError' => 0x3,
+			'InvalidExecCode' => 0x4,
+			'NodeError' => 0x5,
 			'_max' => 0x4
 		);
 		
 		public static function createExecutePayload($identifier, $typemap, $args)
 		{
-			$buffer = pack('cV', NodeSocketCommon::$EnumExecutionCode['ExecFunction'], strlen($identifier)) . $identifier;
-			
+			$buffer = '';
 			for($i = 0; $i < count($args); $i++)
 			{
 				$iStr = strval($i);
@@ -131,6 +133,7 @@
 				}
 			}
 			
-			return $buffer;
+			$idLength = strlen($identifier);
+			return pack('cVV', NodeSocketCommon::$EnumExecutionCode['ExecFunction'], strlen($buffer) + $idLength + 4, $idLength) . $identifier . $buffer;
 		}
 	}

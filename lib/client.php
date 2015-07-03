@@ -1,23 +1,36 @@
 <?php
 	class NodeSocketClient
 	{
-		private $port;
-		private $ipaddress;
+		private $context;
+		private $host;
 		private $socket;
 		private $state;
+		private $options;
 		private $functions = array();
 		
-		public function __construct($port, $address) // $address can be either a DNS name or an IP (v4 or v6) address
+		public function __construct($port, $address, $options = array()) // $address can be either a DNS name or an IP (v4 or v6) address
 		{
-			$this->port = $port;
-			if(filter_var($address, FILTER_VALIDATE_IP) !== false)
+			if(array_key_exists('secure', $options) && $options['secure'] === true)
 			{
-				$this->ipaddress = $address;
+				$this->host = 'tls://';
 			}
 			else
 			{
-				$this->ipaddress = gethostbyname($address);
+				$this->host = 'tcp://';
 			}
+			
+			$this->host = $address . ':' . $port;
+			
+			if(array_key_exists('socketOptions', $options))
+			{
+				$this->context = stream_context_create($options['socketOptions']);
+			}
+			else
+			{
+				$this->context = stream_context_create();
+			}
+			
+			$this->options = $options;
 			$this->state = NodeSocketCommon::$EnumConnectionState['Disconnected'];
 		}
 		
@@ -25,16 +38,22 @@
 		{
 			$ret = '';
 			$length = 0;
-			while(($readBuffer = socket_read($this->socket, 1)) !== false)
+			while(($readBuffer = fread($this->socket, 1)) !== '')
 			{
 				if($length++ === 0)
 				{
-					socket_set_nonblock($this->socket);
+					stream_set_blocking($this->socket, 0);
 				}
+				
 				$ret .= $readBuffer;
 			}
-			socket_set_block($this->socket);
+			stream_set_blocking($this->socket, 1);
 			return $ret;
+		}
+		
+		protected function write($buffer)
+		{
+			fwrite($this->socket, $buffer);
 		}
 		
 		public function remoteExecute(&$identifier, &$typemap, $args)
@@ -43,7 +62,7 @@
 				$buffer = NodeSocketCommon::createExecutePayload($identifier, $typemap, $args);
 				$this->state = NodeSocketCommon::$EnumConnectionState['Processing'];
 
-				socket_write($this->socket, utf8_encode($buffer));
+				$this->write(utf8_encode($buffer));
 				
 				$responseBuffer = $this->read();
 				
@@ -124,45 +143,26 @@
 			};
 		}
 		
-		public function start()
+		public function connect()
 		{
-			$domain = null;
-			if(filter_var($this->ipaddress, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false)
-			{
-				$domain = AF_INET;
-			}
-			else
-			{
-				$domain = AF_INET6;
-			}
+			$error;
+			$errorMessage;
 			
-			if(($this->socket = socket_create($domain, SOCK_STREAM, SOL_TCP)) !== false)
+			$this->socket = stream_socket_client($this->host, $error, $errorMessage, array_key_exists('timeout', $this->options) ? $this->options['timeout'] : 30, STREAM_CLIENT_CONNECT, $this->context);
+			if($this->socket !== false)
 			{
-				$result = socket_connect($this->socket, $this->ipaddress, $this->port);
-				if ($result !== false)
+				$this->state = NodeSocketCommon::$EnumConnectionState['Connected'];
+				
+				$this->write(utf8_encode(NodeSocketCommon::$nodesocketSignature));
+				if($this->read() === utf8_encode(NodeSocketCommon::$nodesocketSignature))
 				{
-					$this->state = NodeSocketCommon::$EnumConnectionState['Connected'];
-					socket_write($this->socket, utf8_encode(NodeSocketCommon::$nodesocketSignature));
-					if($this->read() === utf8_encode(NodeSocketCommon::$nodesocketSignature))
-					{
-						$this->state = NodeSocketCommon::$EnumConnectionState['Verified'];
-
-						socket_set_option($this->socket, SOL_SOCKET, SO_KEEPALIVE, 1);
-						socket_write($this->socket, pack('C', NodeSocketCommon::$EnumExecutionCode['ClientReady']));
-					}
-					else
-					{
-						throw new Exception('Unable to connect to remote socket \'' . $this->ipaddress . ':' . $this->port . '\': Could not verify NodeSocket protocol');
-					}
-				}
-				else
-				{
-					throw new Exception('Unable to connect to remote socket \'' . $this->ipaddress . ':' . $this->port . '\': ' . socket_strerror(socket_last_error($this->socket)));
+					$this->state = NodeSocketCommon::$EnumConnectionState['Verified'];
+					$this->write(pack('C', NodeSocketCommon::$EnumExecutionCode['RequestMaster']));
 				}
 			}
 			else
 			{
-				throw new Exception('Unable to create socket');
+				throw new Exception('Socket Error: ' . $errno . ' - ' . $errstr);
 			}
 		}
 	}
